@@ -41,7 +41,7 @@ stages:
           displayName: Terraform Init
           inputs:
             #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
-            script: terraform init -backend-config="access_key=$(stateterraform184-key1)"
+            script: terraform init -backend-config="access_key=$(example-key1)"
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform/
 
         - task: CmdLine@2
@@ -88,7 +88,7 @@ stages:
           displayName: Terraform Init
           inputs:
             #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
-            script: terraform init -backend-config="access_key=$(stateterraform184-key1)"
+            script: terraform init -backend-config="access_key=$(example-key1)"
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform/
 
         - task: DownloadPipelineArtifact@2
