@@ -11,7 +11,7 @@ pool:
   name: Azure Pipelines
   vmImage: 'ubuntu-18.04'
 variables:
-- group: Terraform Infra
+- group: Terraform Backend
 - name: system.debug
   value: false
 
@@ -23,7 +23,8 @@ stages:
       - task: CmdLine@2
         displayName: Terraform Init
         inputs:
-          script: terraform init -backend-config="access_key=$(stateterraform000x-key1)"
+          #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
+          script: terraform init -backend-config="access_key=$(example-key1)"
           workingDirectory: terraform
 
       - task: CmdLine@2
@@ -39,12 +40,14 @@ stages:
         - task: CmdLine@2
           displayName: Terraform Init
           inputs:
-            script: terraform init -backend-config="access_key=$(stateterraform000x-key1)"
+            #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
+            script: terraform init -backend-config="access_key=$(stateterraform184-key1)"
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform/
 
         - task: CmdLine@2
           displayName: Terraform Plan
           inputs:
+            #replace spn-client-id, spn-client-secret and spn-tenant-id with values from key vault. Pipelines > Library > Variable groups
             script: terraform plan -input=false -out=tfplan -var="spn-client-id=$(terraform-azdevops-spn-client-id)" -var="spn-client-secret=$(terraform-azdevops-spn-secret)" -var="spn-tenant-id=$(terraform-azdevops-spn-tenant-id)"
             workingDirectory: terraform
 
@@ -84,7 +87,8 @@ stages:
         - task: CmdLine@2
           displayName: Terraform Init
           inputs:
-            script: terraform init -backend-config="access_key=$(stateterraform000x-key1)"
+            #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
+            script: terraform init -backend-config="access_key=$(stateterraform184-key1)"
             workingDirectory: $(System.DefaultWorkingDirectory)/terraform/
 
         - task: DownloadPipelineArtifact@2
