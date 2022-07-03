@@ -1,0 +1,92 @@
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - terraform/
+    exclude:
+    - terraform/pipelines
+pool:
+  name: Azure Pipelines
+  vmImage: 'ubuntu-18.04'
+variables:
+- group: Terraform Backend
+- name: system.debug
+  value: false
+
+stages:
+  - stage: Validate
+    jobs:
+    - job: ValidateInstall
+      steps:
+      - task: CmdLine@2
+        displayName: Terraform Init
+        inputs:
+          #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
+          script: terraform init -backend-config="access_key=$(example-key1)"
+          workingDirectory: terraform
+
+      - task: CmdLine@2
+        displayName: Terraform Validate
+        inputs:
+          script: terraform validate
+          workingDirectory: terraform
+
+  - stage: Plan
+    jobs:
+    - job: Plan
+      steps: 
+        - task: CmdLine@2
+          displayName: Terraform Init
+          inputs:
+            #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
+            script: terraform init -backend-config="access_key=$(example-key1)"
+            workingDirectory: $(System.DefaultWorkingDirectory)/terraform/
+
+        - task: CmdLine@2
+          displayName: Terraform Plan
+          inputs:
+            #replace spn-client-id, spn-client-secret and spn-tenant-id with values from key vault. Pipelines > Library > Variable groups
+            script: terraform plan -input=false -out=tfplan -var="spn-client-id=$(terraform-azdevops-spn-client-id)" -var="spn-client-secret=$(terraform-azdevops-spn-secret)" -var="spn-tenant-id=$(terraform-azdevops-spn-tenant-id)"
+            workingDirectory: terraform
+
+        - task: CopyFiles@2
+          displayName: Copy plan file
+          inputs:
+            SourceFolder: $(System.DefaultWorkingDirectory)/terraform/
+            Contents: 'tfplan'
+            TargetFolder: $(Build.ArtifactStagingDirectory)
+          condition: succeededOrFailed()
+
+        - task: PublishPipelineArtifact@1
+          displayName: Publish Pipeline Artifact
+          inputs:
+            artifactName: terraformPlan-$(Build.BuildId)
+            targetPath: $(Build.ArtifactStagingDirectory)
+
+  - stage: Apply
+    jobs:
+    - job: Apply
+      steps: 
+
+        - task: CmdLine@2
+          displayName: Terraform Init
+          inputs:
+            #replace 'example-key1' with your key from key vault. Pipelines > Library > Variable groups
+            script: terraform init -backend-config="access_key=$(example-key1)"
+            workingDirectory: $(System.DefaultWorkingDirectory)/terraform/
+
+        - task: DownloadPipelineArtifact@2
+          inputs:
+            artifactName: terraformPlan-$(Build.BuildId)
+            targetPath: $(Build.Repository.LocalPath)/terraform/
+            buildType: 'current'
+
+        - task: TerraformCLI@0
+          displayName: Terraform apply
+          inputs:
+            command: apply
+            workingDirectory: $(System.DefaultWorkingDirectory)/terraform/
+            runAzLogin: true
+            commandOptions: -input=false tfplan
